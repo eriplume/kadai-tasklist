@@ -10,7 +10,8 @@
     </head>
 
     <body>
-
+        @include('commons.error_messages')
+        
         <div class="container mx-auto">
             
             {{-- ナビゲーションバー --}}
