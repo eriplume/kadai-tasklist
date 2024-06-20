@@ -1,6 +1,6 @@
 @if (Auth::check())
-    {{-- ユーザー一覧ページへのリンク --}}
-    <li><a class="link link-hover" href="{{ route('tasks.create') }}">新規タスク登録</a></li>
+    {{-- タスク登録リンク --}}
+    <li><a class="link link-hover" href="{{ route('tasks.create') }}">{{ Auth::user()->name }}の新規タスク登録</a></li>
     {{-- ログアウトへのリンク --}}
     <li><a class="link link-hover" href="#" onclick="event.preventDefault();this.closest('form').submit();">Logout</a></li>
 @else
