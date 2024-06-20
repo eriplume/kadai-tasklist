@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Task;
 
 class TasksController extends Controller
@@ -12,11 +13,19 @@ class TasksController extends Controller
      */
     public function index()
     {
-        $tasks = Task::all();
+        $data = [];
         
-        return view('tasks.index', [
-            'tasks' => $tasks,
-        ]);
+        if (Auth::check()) {
+            
+            $user = Auth::user();
+            $tasks = $user->tasks()->orderBy('created_at', 'desc')->paginate(10);
+            
+            $data = [
+                'user' => $user,
+                'tasks' => $tasks,
+            ];
+        }
+        return view('dashboard', $data);
     }
 
     /**
@@ -41,10 +50,10 @@ class TasksController extends Controller
             'status' => 'required|max:10'
         ]);
     
-        $task = new Task;
-        $task->content = $request->content;
-        $task->status = $request->status;
-        $task->save();
+        $request->user()->tasks()->create([
+            'content' => $request->content,
+            'status' => $request->status,
+        ]);
         
         return redirect('/');
     }
@@ -54,11 +63,16 @@ class TasksController extends Controller
      */
     public function show(string $id)
     {
+        
         $task = Task::findOrFail($id);
         
-        return view('tasks.show', [
-            'task' => $task,
-        ]);
+        if (Auth::id() === $task->user_id) {
+            return view('tasks.show', [
+                'task' => $task,
+            ]);
+        }
+
+        return redirect('/');
     }
 
     /**
@@ -68,9 +82,13 @@ class TasksController extends Controller
     {
         $task = Task::findOrFail($id);
         
-        return view('tasks.edit', [
-            'task' => $task,
-        ]);
+        if (Auth::id() === $task->user_id) {
+            return view('tasks.edit', [
+                'task' => $task,
+            ]);
+        }
+        
+        return redirect('/');
     }
 
     /**
@@ -84,9 +102,14 @@ class TasksController extends Controller
         ]);
     
         $task = Task::findOrFail($id);
-        $task->content = $request->content;
-        $task->status = $request->status;
-        $task->save();
+        
+        if (Auth::id() === $task->user_id) {
+            $task->content = $request->content;
+            $task->status = $request->status;
+            $task->save();
+        
+            return redirect('/');
+        }
         
         return redirect('/');
     }
@@ -97,8 +120,14 @@ class TasksController extends Controller
     public function destroy(string $id)
     {
         $task = Task::findOrFail($id);
-        $task->delete();
         
-        return redirect('/');
+        if (Auth::id() === $task->user_id) {
+            $task->delete();
+            return redirect('/')
+                ->with('success','Delete Successful');;
+        }
+        
+        return back()
+            ->with('Delete Failed');
     }
 }
